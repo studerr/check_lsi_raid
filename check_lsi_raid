@@ -728,9 +728,26 @@ sub getBBUStatus {
 	push @{$commands_a}, $command;
 
 	my $status = '';
+	my $learn_cycle_active = 0;
 	my @output = `$command`;
 	if(checkCommandStatus(\@output)) {
 		my $currBlock;
+		foreach my $line (@output) {
+			if($line =~ /^(BBU_Firmware_Status)/){
+				$currBlock = $1;
+				next;
+			}
+			if(defined($currBlock and $currBlock eq 'BBU_Firmware_Status')){
+				$line =~ s/^\s+|\s+$//g;#trim line
+				if ($line =~ /^Learn Cycle Active/){
+					$line =~ /([a-zA-Z\/]*)$/;
+					if($1 eq "Yes") {
+						$learn_cycle_active = 1;
+					}
+				}
+			}
+		}
+		undef $currBlock;
 		foreach my $line (@output) {
 			if($line =~ /^(BBU_Info|BBU_Firmware_Status|GasGaugeStatus)/){
 				$currBlock = $1;
